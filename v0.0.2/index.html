@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风神翼龙の汇率计算器</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-image: url('/img/beijing.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        position: relative;
+    }
+    .character {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        max-height: 90vh;
+        opacity: 1;
+        z-index: 0;
+        pointer-events: none;
+    }
+    header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 10px;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        z-index: 2;
+    }
+    h1 {
+        color: white;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px 20px;
+        border-radius: 4px;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 32px;
+    }
+    main {
+        padding: 20px;
+        background-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+    input, select {
+        padding: 10px;
+        margin: 10px 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    #buttonContainer {
+        display: none;
+        position: absolute;
+        top: 60px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    #buttonContainer button {
+        display: block;
+        margin: 5px 0;
+        width: 100%;
+    }
+    .bottom-links {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+    }
+    .bottom-links a {
+        color: white;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 5px 10px;
+        margin: 2px 0;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    .bottom-links a:hover {
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+    .bottom-center {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid white;
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+</style>
+</head>
+<body>
+<header>
+    <h1>风神翼龙の汇率计算器</h1>
+    <img class="avatar" src="/img/avatar.jpg" alt="头像" onclick="toggleButtons()">
+    <div id="buttonContainer">
+        <button onclick="openBilibili()">跳转B站个人主页</button>
+        <button onclick="openDouyin()">跳转抖音个人主页</button>
+    </div>
+</header>
+
+<main>
+    <div>
+        <input type="number" id="amount1" value="1" min="0" step="any">
+        <select id="currency1"></select>
+        <button id="swapBtn">⇆</button>
+        <input type="number" id="amount2" value="" min="0" step="any">
+        <select id="currency2"></select>
+    </div>
+    <button id="calcBtn">计算</button>
+    <p id="rateInfo">汇率截至日期：--</p>
+</main>
+
+<img class="character" src="/img/lihui.png" alt="右下角人物立绘">
+
+<div class="bottom-links">
+    <a href="https://blog.fsyl001.sbs" target="_blank">返回首页</a>
+</div>
+
+<div class="bottom-center">
+    本站版权归属 FSYLの小破站 所有 |  Frankfurter API（基于欧洲中央银行数据）
+</div>
+
+<script>
+    const currencyMap = {
+        "USD": "美元", "CNY": "人民币", "JPY": "日元", "EUR": "欧元",
+        "GBP": "英镑", "KRW": "韩元", "HKD": "港币", "AUD": "澳元",
+        "CAD": "加元", "CHF": "瑞士法郎", "SGD": "新加坡元", "THB": "泰铢",
+        "BGL": "保加利亚列弗", "BRL": "巴西雷亚尔", "CZK": "捷克克朗", "DKK": "丹麦克朗",
+        "HUF": "匈牙利福林", "IDR": "印尼卢比", "ILS": "以色列新谢克尔", "INR": "印度卢比",
+        "ISK": "冰岛克朗", "MXN": "墨西哥比索", "MYR": "马来西亚林吉特", "NOK": "挪威克朗",
+        "NZD": "新西兰元", "PHP": "菲律宾比索", "PLN": "波兰兹罗提", "RON": "罗马尼亚列伊",
+        "SEK": "瑞典克朗", "TRY": "土耳其里拉", "ZAR": "南非兰特","BGN":"保加利亚列弗"
+    };
+
+    let rates = {};
+    let debounceTimer;
+
+    async function loadCurrencies() {
+        try {
+            const res = await fetch("https://api.frankfurter.dev/v1/currencies");
+            if (!res.ok) throw new Error();
+            var data = await res.json();
+        } catch {
+            const res = await fetch("https://api.frankfurter.app/v1/currencies");
+            var data = await res.json();
+        }
+
+        const currency1 = document.getElementById("currency1");
+        const currency2 = document.getElementById("currency2");
+
+        for (const code in data) {
+            let name = currencyMap[code] ? `${currencyMap[code]} (${code})` : `${data[code]} (${code})`;
+            let option1 = new Option(name, code);
+            let option2 = new Option(name, code);
+            currency1.add(option1);
+            currency2.add(option2);
+        }
+        currency1.value = "USD";
+        currency2.value = "CNY";
+        fetchRates();
+    }
+
+    async function fetchRates() {
+        const from = document.getElementById("currency1").value;
+        const to = document.getElementById("currency2").value;
+        try {
+            const res = await fetch(`https://api.frankfurter.dev/v1/latest?from=${from}&to=${to}`);
+            if (!res.ok) throw new Error();
+            var data = await res.json();
+        } catch {
+            const res = await fetch(`https://api.frankfurter.app/v1/latest?from=${from}&to=${to}`);
+            var data = await res.json();
+        }
+        rates = data.rates;
+        document.getElementById("rateInfo").innerText = `汇率截至日期：${data.date}`;
+        calculateFrom1();
+    }
+
+    function calculateFrom1() {
+        const amount1 = parseFloat(document.getElementById("amount1").value) || 0;
+        const rate = Object.values(rates)[0] || 0;
+        document.getElementById("amount2").value = (amount1 * rate).toFixed(4);
+    }
+
+    function calculateFrom2() {
+        const amount2 = parseFloat(document.getElementById("amount2").value) || 0;
+        const rate = Object.values(rates)[0] || 0;
+        document.getElementById("amount1").value = (amount2 / rate).toFixed(4);
+    }
+
+    document.getElementById("swapBtn").addEventListener("click", () => {
+        const c1 = document.getElementById("currency1");
+        const c2 = document.getElementById("currency2");
+        const a1 = document.getElementById("amount1");
+        const a2 = document.getElementById("amount2");
+
+        [c1.value, c2.value] = [c2.value, c1.value];
+        [a1.value, a2.value] = [a2.value, a1.value];
+
+        fetchRates();
+    });
+
+    document.getElementById("amount1").addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(calculateFrom1, 200);
+    });
+
+    document.getElementById("amount2").addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(calculateFrom2, 200);
+    });
+
+    document.getElementById("currency1").addEventListener("change", fetchRates);
+    document.getElementById("currency2").addEventListener("change", fetchRates);
+    document.getElementById("calcBtn").addEventListener("click", calculateFrom1);
+
+    function toggleButtons() {
+        const container = document.getElementById('buttonContainer');
+        container.style.display = container.style.display === 'block' ? 'none' : 'block';
+    }
+    function openBilibili() {
+        window.open('https://space.bilibili.com/450000657', '_blank');
+    }
+    function openDouyin() {
+        window.open('https://www.douyin.com/user/MS4wLjABAAAAzWfG071S0Ol0_wF3xT1i0oL5eSpPdiYZZY_gKib9S_M', '_blank');
+    }
+
+    loadCurrencies();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4d89180e7866416485a1867d2ebd78b8","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
