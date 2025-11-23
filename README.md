@@ -18,8 +18,8 @@
 - ##
 - 演示网站：
 - 
-- exchange.fsyl001.sbs   （cloud flare部署的静态网页，大陆地区打不开可以使用梯子）
-    ex.fsyl001.sbs
+- [https://exchange.fsyl001.sbs](https://exchange.fsyl001.sbs)   （cloud flare部署的静态网页，大陆地区打不开可以使用梯子）
+  [https://ex.fsyl001.sbs](https://ex.fsyl001.sbs)
   
   
 
